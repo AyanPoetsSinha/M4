@@ -1,0 +1,82 @@
+
+
+--copy the file inside the HDFS
+
+hdfs dfs -copyFromLocal './file1.txt' '/user/root/'
+
+---then start hive
+
+$hive
+
+--create db
+
+create database starwars;
+
+--use db
+
+use database starwars;
+
+
+--create table under that db
+
+> create table starwars2
+    > (actor STRING, Dialogue STRING)
+    > ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+    > TBLPROPERTIES ("skip.header.line.count"="1");
+
+---load the file into the table
+
+hive>  LOAD DATA LOCAL INPATH
+    > './file1.txt'
+    > into table starwars2;
+
+
+--describe the table
+
+hive> desc starwars2;
+OK
+actor                   string
+dialogue                string
+Time taken: 0.11 seconds, Fetched: 2 row(s)
+
+--check the query
+
+hive> select distinct  count(dialogue) counters from starwars2 where UPPER(dialogue) like UPPER('%Luke%');
+
+---find the out put diretory
+
+hive> dfs -ls 'hdfs:///user/root/output/export';
+
+--- copy the output inside HDFS
+
+hive> INSERT OVERWRITE DIRECTORY
+    > '/user/root/output/export/'
+    > ROW format delimited fields terminated by '\n'
+    > select count(dialogue) as counters from starwars2 where UPPER(dialogue) like UPPER('%Luke%');
+
+--Or copy the output inside the local directory
+
+hive> INSERT OVERWRITE DIRECTORY
+    > './output_2_direct.txt'
+    > ROW format delimited fields terminated by '\n'
+    > select count(dialogue) as counters from starwars2 where UPPER(dialogue) like UPPER('%Luke%');
+
+---check the output file in hdfs while in hive(Step might fail)
+
+hive> dfs cat 'hdfs:///user/root/output/export';
+
+---copy the output inside local
+
+hive> dfs -copyToLocal 'hdfs:///user/root/output/export/000000_0' './output2.txt';
+
+
+--get out of hive
+
+exit;
+
+-- check the output file found in local
+
+cat output2dfs .txt
+
+
+
